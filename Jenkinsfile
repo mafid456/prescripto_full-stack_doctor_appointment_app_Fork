@@ -7,7 +7,14 @@ pipeline {
         BACKEND_IMAGE  = "prescripto-backend:latest"
     }
 
+    options {
+        // Prevent long-running shell steps from timing out
+        timeout(time: 60, unit: 'MINUTES')
+        timestamps()
+    }
+
     stages {
+
         stage('Checkout') {
             steps {
                 echo "Cloning repository..."
@@ -15,24 +22,29 @@ pipeline {
             }
         }
 
-        stage('Install Dependencies & Build Frontend') {
+        stage('Install Frontend Dependencies') {
             steps {
                 dir('frontend') {
-                    echo "Building frontend inside Node.js container..."
-                    sh '''
-                        docker run --rm -v $PWD:/app -w /app node:18 bash -c "npm install && npm run build"
-                    '''
+                    echo "Installing frontend dependencies..."
+                    sh 'npm install --omit=dev'
                 }
             }
         }
 
-        stage('Install Dependencies & Build Backend') {
+        stage('Build Frontend') {
+            steps {
+                dir('frontend') {
+                    echo "Building frontend..."
+                    sh 'npm run build'
+                }
+            }
+        }
+
+        stage('Install Backend Dependencies') {
             steps {
                 dir('backend') {
-                    echo "Building backend inside Node.js container..."
-                    sh '''
-                        docker run --rm -v $PWD:/app -w /app node:18 bash -c "npm install"
-                    '''
+                    echo "Installing backend dependencies..."
+                    sh 'npm install'
                 }
             }
         }
@@ -40,14 +52,16 @@ pipeline {
         stage('Build Docker Images') {
             steps {
                 script {
-                    echo "Building Docker images..."
-                    sh 'docker build -t $FRONTEND_IMAGE ./frontend'
-                    sh 'docker build -t $BACKEND_IMAGE ./backend'
+                    echo "Building frontend Docker image..."
+                    sh "docker build -t ${env.FRONTEND_IMAGE} ./frontend"
+
+                    echo "Building backend Docker image..."
+                    sh "docker build -t ${env.BACKEND_IMAGE} ./backend"
                 }
             }
         }
 
-        stage('Run Containers') {
+        stage('Deploy with Docker Compose') {
             steps {
                 echo "Stopping old containers..."
                 sh 'docker-compose down || true'
@@ -63,6 +77,7 @@ pipeline {
                 sh 'docker ps'
             }
         }
+
     }
 
     post {
