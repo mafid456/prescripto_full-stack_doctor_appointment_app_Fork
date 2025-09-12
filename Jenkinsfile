@@ -8,7 +8,6 @@ pipeline {
     }
 
     options {
-        // Prevent long-running shell steps from timing out
         timeout(time: 60, unit: 'MINUTES')
         timestamps()
     }
@@ -25,8 +24,8 @@ pipeline {
         stage('Install Frontend Dependencies') {
             steps {
                 dir('frontend') {
-                    echo "Installing frontend dependencies..."
-                    sh 'npm install --omit=dev'
+                    echo "Installing frontend dependencies (with dev)..."
+                    sh 'npm install'   // 👈 allow vite installation
                 }
             }
         }
@@ -43,8 +42,8 @@ pipeline {
         stage('Install Backend Dependencies') {
             steps {
                 dir('backend') {
-                    echo "Installing backend dependencies..."
-                    sh 'npm install'
+                    echo "Installing backend dependencies (production only)..."
+                    sh 'npm ci --only=production'
                 }
             }
         }
@@ -77,7 +76,6 @@ pipeline {
                 sh 'docker ps'
             }
         }
-
     }
 
     post {
