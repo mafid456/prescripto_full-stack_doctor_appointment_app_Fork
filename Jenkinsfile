@@ -2,8 +2,9 @@ pipeline {
     agent any
 
     environment {
-        // Set any environment variables if needed
         NODE_ENV = "production"
+        FRONTEND_IMAGE = "prescripto-frontend:latest"
+        BACKEND_IMAGE  = "prescripto-backend:latest"
     }
 
     stages {
@@ -14,29 +15,24 @@ pipeline {
             }
         }
 
-        stage('Install Dependencies') {
-            parallel {
-                stage('Frontend Dependencies') {
-                    steps {
-                        dir('frontend') {
-                            sh 'npm install'
-                        }
-                    }
-                }
-                stage('Backend Dependencies') {
-                    steps {
-                        dir('backend') {
-                            sh 'npm install'
-                        }
-                    }
+        stage('Install Dependencies & Build Frontend') {
+            steps {
+                dir('frontend') {
+                    echo "Building frontend inside Node.js container..."
+                    sh '''
+                        docker run --rm -v $PWD:/app -w /app node:18 bash -c "npm install && npm run build"
+                    '''
                 }
             }
         }
 
-        stage('Build Frontend') {
+        stage('Install Dependencies & Build Backend') {
             steps {
-                dir('frontend') {
-                    sh 'npm run build'
+                dir('backend') {
+                    echo "Building backend inside Node.js container..."
+                    sh '''
+                        docker run --rm -v $PWD:/app -w /app node:18 bash -c "npm install"
+                    '''
                 }
             }
         }
@@ -45,17 +41,18 @@ pipeline {
             steps {
                 script {
                     echo "Building Docker images..."
-                    sh 'docker build -t prescripto-frontend:latest ./frontend'
-                    sh 'docker build -t prescripto-backend:latest ./backend'
+                    sh 'docker build -t $FRONTEND_IMAGE ./frontend'
+                    sh 'docker build -t $BACKEND_IMAGE ./backend'
                 }
             }
         }
 
         stage('Run Containers') {
             steps {
-                echo "Starting containers..."
-                // If you have docker-compose.yml
-                sh 'docker-compose down'
+                echo "Stopping old containers..."
+                sh 'docker-compose down || true'
+
+                echo "Starting new containers..."
                 sh 'docker-compose up -d --build'
             }
         }
@@ -77,7 +74,7 @@ pipeline {
             echo "Pipeline finished successfully!"
         }
         failure {
-            echo "Pipeline failed."
+            echo "Pipeline failed!"
         }
     }
 }
