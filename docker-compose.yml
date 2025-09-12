@@ -1,13 +1,21 @@
 version: "3.8"
 
 services:
+  mongo:
+    image: mongo:6
+    container_name: prescripto_mongo
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo_data:/data/db
+
   backend:
     build: ./backend
     container_name: prescripto_backend
     ports:
       - "5000:5000"
     environment:
-      - MONGO_URI=${MONGO_URI}
+      - MONGO_URI=mongodb://mongo:27017/prescripto
       - JWT_SECRET=${JWT_SECRET}
       - STRIPE_KEY=${STRIPE_KEY}
       - RAZORPAY_KEY=${RAZORPAY_KEY}
@@ -25,14 +33,6 @@ services:
     container_name: prescripto_admin
     ports:
       - "4000:80"
-
-  mongo:
-    image: mongo:6
-    container_name: prescripto_mongo
-    ports:
-      - "27017:27017"
-    volumes:
-      - mongo_data:/data/db
 
 volumes:
   mongo_data:
