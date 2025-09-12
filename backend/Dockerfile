@@ -1,19 +1,14 @@
 # Use Node.js LTS
 FROM node:18
 
-# Set working directory
 WORKDIR /app
-
-# Install dependencies
 COPY package*.json ./
+# Install only production dependencies
 RUN npm ci --only=production
 
-# Copy source code
 COPY . .
 
-# Expose backend port
 EXPOSE 5000
+CMD ["node", "server.js"]   # change to app.js if that's your entry
 
-# Run backend
-CMD ["node", "server.js"]   # or app.js depending on your entry file
 
