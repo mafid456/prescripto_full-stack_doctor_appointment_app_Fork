@@ -1,0 +1,44 @@
+name: Prescripto CI/CD
+
+on:
+  push:
+    branches: [ "main" ]
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Set up Docker
+        uses: docker/setup-buildx-action@v2
+
+      - name: Login to Docker Hub
+        uses: docker/login-action@v2
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Build and push Docker images
+        run: |
+          docker build -t ${{ secrets.DOCKERHUB_USERNAME }}/prescripto-backend ./backend
+          docker build -t ${{ secrets.DOCKERHUB_USERNAME }}/prescripto-frontend ./frontend
+          docker build -t ${{ secrets.DOCKERHUB_USERNAME }}/prescripto-admin ./admin
+          docker push ${{ secrets.DOCKERHUB_USERNAME }}/prescripto-backend
+          docker push ${{ secrets.DOCKERHUB_USERNAME }}/prescripto-frontend
+          docker push ${{ secrets.DOCKERHUB_USERNAME }}/prescripto-admin
+
+      - name: Deploy to server via SSH
+        uses: appleboy/ssh-action@v0.1.7
+        with:
+          host: ${{ secrets.SERVER_HOST }}
+          username: ${{ secrets.SERVER_USER }}
+          key: ${{ secrets.SERVER_SSH_KEY }}
+          script: |
+            cd /var/www/prescripto
+            git pull origin main
+            docker-compose down
+            docker-compose pull
+            docker-compose up -d --build
