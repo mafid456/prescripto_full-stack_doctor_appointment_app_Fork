@@ -1,43 +1,44 @@
 services:
-  frontend:
-    build:
-      context: ./frontend
-      dockerfile: Dockerfile
-    ports:
-      - "3000:80"   # React app via Nginx
-    depends_on:
-      - backend
-
-  admin:
-    build:
-      context: ./admin
-      dockerfile: Dockerfile
-    ports:
-      - "4000:80"   # Admin React app via Nginx
-    depends_on:
-      - backend
-
-  backend:
-    build:
-      context: ./backend
-      dockerfile: Dockerfile
-    ports:
-      - "5000:5000"
-    environment:
-      MONGO_URI: mongodb://mongo:27017/prescripto
-      JWT_SECRET: ${JWT_SECRET}
-      STRIPE_KEY: ${STRIPE_KEY}
-      RAZORPAY_KEY: ${RAZORPAY_KEY}
-    depends_on:
-      - mongo
-
+  # MongoDB service
   mongo:
     image: mongo:6
-    restart: always
+    container_name: mongo
     ports:
       - "27017:27017"
     volumes:
-      - mongo-data:/data/db
+      - mongo_data:/data/db
+
+  # Backend (Node.js API)
+  backend:
+    build: ./backend
+    container_name: backend
+    ports:
+      - "5000:5000"
+    environment:
+      - MONGO_URI=mongodb://mongo:27017/prescripto
+      - JWT_SECRET=supersecretkey
+      - STRIPE_KEY=dummy_stripe_key
+      - RAZORPAY_KEY=dummy_razorpay_key
+    depends_on:
+      - mongo
+
+  # Frontend (React App for patients)
+  frontend:
+    build: ./frontend
+    container_name: frontend
+    ports:
+      - "3000:3000"
+    depends_on:
+      - backend
+
+  # Admin (React App for doctors/admins)
+  admin:
+    build: ./admin
+    container_name: admin
+    ports:
+      - "4000:4000"
+    depends_on:
+      - backend
 
 volumes:
-  mongo-data:
+  mongo_data:
