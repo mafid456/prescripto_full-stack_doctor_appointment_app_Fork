@@ -1,38 +1,43 @@
-version: "3.8"
-
 services:
-  mongo:
-    image: mongo:6
-    container_name: prescripto_mongo
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
     ports:
-      - "27017:27017"
-    volumes:
-      - mongo_data:/data/db
+      - "3000:80"   # React app via Nginx
+    depends_on:
+      - backend
+
+  admin:
+    build:
+      context: ./admin
+      dockerfile: Dockerfile
+    ports:
+      - "4000:80"   # Admin React app via Nginx
+    depends_on:
+      - backend
 
   backend:
-    build: ./backend
-    container_name: prescripto_backend
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
     ports:
       - "5000:5000"
     environment:
-      - MONGO_URI=mongodb://mongo:27017/prescripto
-      - JWT_SECRET=${JWT_SECRET}
-      - STRIPE_KEY=${STRIPE_KEY}
-      - RAZORPAY_KEY=${RAZORPAY_KEY}
+      MONGO_URI: mongodb://mongo:27017/prescripto
+      JWT_SECRET: ${JWT_SECRET}
+      STRIPE_KEY: ${STRIPE_KEY}
+      RAZORPAY_KEY: ${RAZORPAY_KEY}
     depends_on:
       - mongo
 
-  frontend:
-    build: ./frontend
-    container_name: prescripto_frontend
+  mongo:
+    image: mongo:6
+    restart: always
     ports:
-      - "3000:80"
-
-  admin:
-    build: ./admin
-    container_name: prescripto_admin
-    ports:
-      - "4000:80"
+      - "27017:27017"
+    volumes:
+      - mongo-data:/data/db
 
 volumes:
-  mongo_data:
+  mongo-data:
