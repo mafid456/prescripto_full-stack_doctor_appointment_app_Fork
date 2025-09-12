@@ -21,33 +21,6 @@ pipeline {
             }
         }
 
-        stage('Install Frontend Dependencies') {
-            steps {
-                dir('frontend') {
-                    echo "Installing frontend dependencies (with dev)..."
-                    sh 'npm install'   // 👈 allow vite installation
-                }
-            }
-        }
-
-        stage('Build Frontend') {
-            steps {
-                dir('frontend') {
-                    echo "Building frontend..."
-                    sh 'npm run build'
-                }
-            }
-        }
-
-        stage('Install Backend Dependencies') {
-            steps {
-                dir('backend') {
-                    echo "Installing backend dependencies (production only)..."
-                    sh 'npm ci --only=production'
-                }
-            }
-        }
-
         stage('Build Docker Images') {
             steps {
                 script {
