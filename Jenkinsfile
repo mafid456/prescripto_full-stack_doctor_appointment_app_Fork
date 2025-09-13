@@ -16,8 +16,16 @@ pipeline {
 
         stage('Checkout') {
             steps {
-                echo "Cloning repository..."
-                git branch: 'main', url: 'https://github.com/mafid456/prescripto_full-stack_doctor_appointment_app_Fork.git'
+                echo "Cloning repository from GitHub..."
+                checkout([
+                    $class: 'GitSCM',
+                    branches: [[name: '*/main']],
+                    userRemoteConfigs: [[
+                        url: 'https://github.com/mafid456/prescripto_full-stack_doctor_appointment_app_Fork.git',
+                        credentialsId: 'github-cred-id'
+                    ]],
+                    extensions: [[$class: 'CloneOption', timeout: 30]]
+                ])
             }
         }
 
