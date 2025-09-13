@@ -1,14 +1,16 @@
-# Use Node.js LTS
+# Use Node.js LTS for backend API
 FROM node:18
 
 WORKDIR /app
+
+# Install production dependencies
 COPY package*.json ./
-# Install only production dependencies
 RUN npm ci --only=production
 
+# Copy source code
 COPY . .
 
 EXPOSE 5000
-CMD ["node", "server.js"]   # change to app.js if that's your entry
+CMD ["node", "server.js"]   # change to app.js if that's your entrypoint
 
 
